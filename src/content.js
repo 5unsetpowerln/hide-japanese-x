@@ -1,44 +1,53 @@
-// Decides whether hiding is enabled by matching the signed-in account, which page.js
-// reads from the page, against the registered usernames.
+// Decides whether hiding is enabled by matching the signed-in account against the registered
+// usernames, and tells page.js only the result.
 (() => {
-  let usernames = new Set();
-  let viewerId = null;
+  let usernames = null;
   let viewer = null;
-  let ready = false;
+  let sentEnabled = null;
+  let updateScheduled = false;
 
-  function sendState() {
-    if (!ready) return;
-    const enabled = viewer !== null && usernames.has(viewer.toLowerCase());
-    document.dispatchEvent(
-      new CustomEvent("hide-japanese-x:state", { detail: JSON.stringify({ viewerId, enabled }) }),
-    );
+  // The navigation's profile link points to the signed-in account's profile.
+  function currentViewer() {
+    return document.querySelector('a[data-testid="AppTabBar_Profile_Link"]')?.pathname.slice(1) ?? null;
   }
 
-  document.addEventListener("hide-japanese-x:request", sendState);
-  document.addEventListener("hide-japanese-x:viewer", (event) => {
-    viewer = event.detail;
-    browser.storage.local.set({ lastViewer: viewer });
-    sendState();
-  });
-  browser.runtime.onMessage.addListener((message) => {
-    if (message.type !== "viewer-id-changed") return;
-    viewerId = message.id;
-    viewer = null;
-    sendState();
+  function update() {
+    updateScheduled = false;
+    const current = currentViewer();
+    if (current !== viewer) {
+      viewer = current;
+      if (viewer !== null) browser.storage.local.set({ lastViewer: viewer });
+    }
+    if (usernames === null) return;
+    const enabled = viewer !== null && usernames.has(viewer.toLowerCase());
+    if (enabled === sentEnabled) return;
+    sentEnabled = enabled;
+    document.dispatchEvent(new CustomEvent("hide-japanese-x:state", { detail: JSON.stringify({ enabled }) }));
+  }
+
+  function scheduleUpdate() {
+    if (updateScheduled) return;
+    updateScheduled = true;
+    requestAnimationFrame(update);
+  }
+
+  document.addEventListener("hide-japanese-x:request", () => {
+    sentEnabled = null;
+    scheduleUpdate();
   });
   browser.storage.onChanged.addListener((changes, area) => {
     if (area !== "local" || !changes.usernames) return;
     usernames = new Set(changes.usernames.newValue ?? []);
-    sendState();
+    scheduleUpdate();
   });
-
-  Promise.all([
-    browser.storage.local.get("usernames"),
-    browser.runtime.sendMessage({ type: "viewer-id" }),
-  ]).then(([stored, id]) => {
+  new MutationObserver(scheduleUpdate).observe(document, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["href"],
+  });
+  browser.storage.local.get("usernames").then((stored) => {
     usernames = new Set(stored.usernames ?? []);
-    viewerId = id;
-    ready = true;
-    sendState();
+    scheduleUpdate();
   });
 })();

@@ -12,7 +12,7 @@
       }
     }
   },
-  "permissions": ["storage", "cookies"],
+  "permissions": ["storage"],
   "host_permissions": ["https://x.com/*"],
   "background": {
     "scripts": ["src/background.js"]
