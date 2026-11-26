@@ -6,14 +6,15 @@ are signed in to x.com with one of the accounts you register.
 ## How it decides
 
 - **Original language.** A post is judged by the language that X detected for its original text
-  (`legacy.lang` in X's data), not by the text on the screen. When X shows an automatic
-  translation of a post, the post is still judged by the language of the original.
+  (`legacy.lang` in X's API responses), not by the text on the screen. When X shows an
+  automatic translation of a post, the text on the screen is in the translated language, but
+  the post is still judged by the language of the original.
 - **Signed-in account.** Hiding is enabled only while the signed-in account is one of the
-  registered usernames. The account is taken from the `twid` cookie and resolved to a username
-  through X's data, and switching accounts takes effect without a reload.
-- **What is hidden.** A post in a timeline is hidden with its whole timeline cell. A Japanese
-  post quoted inside a non-Japanese post is hidden on its own. A repost is judged by the
-  reposted post. Posts without a detected language (for example, media only) are not hidden.
+  registered usernames. The account is read from the **Profile** link in x.com's navigation,
+  and switching accounts takes effect without a reload.
+- **What is hidden.** A post is hidden with its whole timeline cell. A repost is judged by the
+  reposted post. A quoted post is not judged on its own, so a non-Japanese post that quotes a
+  Japanese one stays. Posts whose language X did not detect (for example, media only) stay.
 
 ## Requirements
 
@@ -48,25 +49,28 @@ tells you whether it recognizes your account.
 
 ## How it works
 
-x.com renders posts with a Relay-based client. The `lang` attribute of a post's text reflects
-only the text on the screen, so it no longer tells the original language once a post is
-translated. Instead, `src/page.js` runs in the page before x.com's scripts and defines
-`window.__RELAY_DEVTOOLS_HOOK__`, through which Relay hands over its environment. The script
-then looks up each post's record in the Relay store by the status ID in the post's link.
+x.com serves signed-in users a client that loads posts from its GraphQL API through
+`XMLHttpRequest`. `src/page.js` runs in the page before x.com's scripts, reads those responses,
+and records `legacy.lang` of every post by its ID (`rest_id`). It then finds each post's ID in
+the link of the post's timestamp and hides the timeline cell (`data-testid="cellInnerDiv"`) of
+a Japanese post.
 
-`src/content.js` keeps the registered usernames out of the page. It receives the signed-in
-account's username from `src/page.js` and tells it only whether hiding is enabled.
-`src/background.js` reads the `twid` cookie and relays its changes.
+`src/content.js` keeps the registered usernames out of the page. It reads the signed-in
+account from the navigation's profile link (`data-testid="AppTabBar_Profile_Link"`) and tells
+`src/page.js` only whether hiding is enabled.
 
 ## Limitations
 
-- The extension depends on internals of the current x.com client (the Relay store, its record
-  IDs, and the DOM of posts). An update of x.com can break it.
-- A post stays visible until its data reaches the Relay store, so a Japanese post can appear
-  for a moment before it is hidden.
+- The extension depends on internals of the client that x.com serves to signed-in users (the
+  shape of its API responses and its DOM). An update of x.com can break it. x.com serves a
+  different client to visitors who are not signed in, where the extension does nothing.
+- If the navigation shows no **Profile** link (for example, in a very narrow window), the
+  signed-in account is not recognized and nothing is hidden.
 
 ## Testing
 
-`npm install`, then `npm test`. The test runs the extension in headless Firefox against the live
-x.com through selenium-webdriver, so it needs network access. Set `FIREFOX` to use a Firefox
-binary other than the default one.
+`npm install`, then `npm test`. Both tests run in headless Firefox through selenium-webdriver.
+`test/page.test.mjs` runs `src/page.js` on a local page that imitates x.com's client.
+`test/e2e.mjs` installs the extension and checks the options page and the account matching on
+the live x.com, so it needs network access. Set `FIREFOX` to use a Firefox binary other than the
+default one.
