@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Hide Japanese Posts on X",
+  "version": "0.1.0",
+  "description": "Hides posts whose original text is Japanese on x.com while you are signed in to one of the registered accounts.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "hide-japanese-x@local",
+      "strict_min_version": "128.0"
+    }
+  },
+  "permissions": ["storage", "cookies"],
+  "host_permissions": ["https://x.com/*"],
+  "background": {
+    "scripts": ["src/background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*"],
+      "js": ["src/page.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://x.com/*"],
+      "js": ["src/content.js"],
+      "css": ["src/hide.css"],
+      "run_at": "document_start"
+    }
+  ],
+  "options_ui": {
+    "page": "src/options.html",
+    "open_in_tab": true
+  }
+}

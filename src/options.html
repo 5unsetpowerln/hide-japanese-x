@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Hide Japanese Posts on X</title>
+    <style>
+      body {
+        font: 15px/1.5 system-ui, sans-serif;
+        max-width: 36rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      textarea {
+        box-sizing: border-box;
+        width: 100%;
+        font: 14px/1.5 ui-monospace, monospace;
+      }
+      #status.error {
+        color: #c00;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Hide Japanese Posts on X</h1>
+    <p>
+      Posts whose original text is Japanese are hidden on x.com only while you are signed in
+      with one of the accounts below. Enter one username per line.
+    </p>
+    <textarea id="usernames" rows="8" spellcheck="false" placeholder="example_user"></textarea>
+    <p><button id="save" type="button">Save</button> <span id="status"></span></p>
+    <p id="last-viewer"></p>
+    <script src="options.js"></script>
+  </body>
+</html>
