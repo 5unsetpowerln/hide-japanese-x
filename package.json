@@ -1,0 +1,12 @@
+{
+  "name": "hide-japanese-x",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "npm run build && node test/e2e.mjs",
+    "build": "rm -f hide-japanese-x.xpi && zip -r hide-japanese-x.xpi manifest.json src"
+  },
+  "devDependencies": {
+    "selenium-webdriver": "4.46.0"
+  }
+}
