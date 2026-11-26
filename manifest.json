@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Hide Japanese Posts on X",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Hides posts whose original text is Japanese on x.com while you are signed in to one of the registered accounts.",
   "browser_specific_settings": {
     "gecko": {
